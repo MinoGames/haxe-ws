@@ -4,8 +4,8 @@ import flash.net.SecureSocket;
 import haxe.io.Bytes;
 import flash.utils.ByteArray;
 import flash.events.ProgressEvent;
-import flash.events.IOErrorEvent;
 import flash.events.SecurityErrorEvent;
+import flash.events.IOErrorEvent;
 import flash.events.Event;
 import flash.utils.Endian;
 import flash.net.Socket;
@@ -30,12 +30,12 @@ class SocketFlash extends Socket2 {
             if (debug) trace('SocketFlash.close');
             this.onclose();
         });
+        this.impl.addEventListener(flash.events.SecurityErrorEvent.SECURITY_ERROR, function(e:SecurityErrorEvent) {
+            if (debug) trace('SocketFlash.SECURITY_ERROR');
+            //this.onerror();
+        });
         this.impl.addEventListener(flash.events.IOErrorEvent.IO_ERROR, function(e:IOErrorEvent) {
             if (debug) trace('SocketFlash.io_error');
-            this.onerror();
-        });
-        this.impl.addEventListener(flash.events.SecurityErrorEvent.SECURITY_ERROR, function(e:SecurityErrorEvent) {
-            if (debug) trace('SocketFlash.securityError');
             this.onerror();
         });
         this.impl.addEventListener(flash.events.ProgressEvent.SOCKET_DATA, function(e:ProgressEvent) {

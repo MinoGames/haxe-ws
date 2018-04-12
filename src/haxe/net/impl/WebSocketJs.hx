@@ -51,8 +51,6 @@ class WebSocketJs extends WebSocket {
     }
 
     override public function sendBytes(message:Bytes) {
-//	Separate message data, because 'message.getData().length' not equal 'message.length'
-	message = message.sub(0, message.length);
         this.impl.send(message.getData());
     }
 	
