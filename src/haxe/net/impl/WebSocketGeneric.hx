@@ -403,7 +403,8 @@ class WebSocketGeneric extends WebSocket {
 
     private function prepareFrame(data:Bytes, type:Opcode, isFinal:Bool):Bytes {
         var out = new BytesRW();
-        var isMasked = true; // All clientes messages must be masked: http://tools.ietf.org/html/rfc6455#section-5.1
+        //var isMasked = true; // All clientes messages must be masked: http://tools.ietf.org/html/rfc6455#section-5.1
+        var isMasked = false; // Chrome doesn't like this?
         var mask = generateMask();
         var sizeMask = (isMasked ? 0x80 : 0x00);
 
