@@ -96,13 +96,19 @@ class WebSocketGeneric extends WebSocket {
         haxe.Log.trace(msg, p);
     }
 
-    private function writeBytes(data:Bytes) {
+    private function writeBytes(data:Bytes, t = 0) {
         //if (socket == null || !socket.connected) return;
         try {
             socket.send(data);
         } catch (e:Dynamic) {
             trace(e);
             onerror(Std.string(e));
+
+            if (t < 10) {
+                haxe.Timer.delay(function() {
+                    writeBytes(data, t + 1);
+                }, 500);
+            }
         }
     }
 
