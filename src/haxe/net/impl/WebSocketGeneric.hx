@@ -106,7 +106,7 @@ class WebSocketGeneric extends WebSocket {
 
             if (t < 10) {
                 haxe.Timer.delay(function() {
-                    writeBytes(data, t + 1);
+                    if (readyState == Open) writeBytes(data, t + 1);
                 }, 500);
             }
         }
