@@ -5,6 +5,7 @@ import haxe.crypto.Sha1;
 import haxe.io.Bytes;
 import haxe.net.Socket2;
 import haxe.net.WebSocket.ReadyState;
+
 class WebSocketGeneric extends WebSocket {
     private var socket:Socket2;
     private var origin = "http://127.0.0.1/";
@@ -15,7 +16,7 @@ class WebSocketGeneric extends WebSocket {
     public var path(default, null) = "/";
     private var secure = false;
     private var protocols = [];
-    private var state = State.Handshake;
+    private var state:State = State.Handshake;
     public var debug:Bool = true;
     private var needHandleData:Bool = false;
 
@@ -95,13 +96,19 @@ class WebSocketGeneric extends WebSocket {
         haxe.Log.trace(msg, p);
     }
 
-    private function writeBytes(data:Bytes) {
+    private function writeBytes(data:Bytes, t = 0) {
         //if (socket == null || !socket.connected) return;
         try {
             socket.send(data);
         } catch (e:Dynamic) {
             trace(e);
             onerror(Std.string(e));
+
+            if (t < 10) {
+                haxe.Timer.delay(function() {
+                    if (readyState == Open) writeBytes(data, t + 1);
+                }, 500);
+            }
         }
     }
 
@@ -128,8 +135,16 @@ class WebSocketGeneric extends WebSocket {
                     if (!readHttpHeader()) {
                         return;
                     }
-                    state = State.Head;
-                    this.onopen();
+
+                    try {
+                        validateServerHandshakeHeader();
+                        state = State.Head;
+                        this.onopen();
+                    } catch(e:Dynamic) {
+                        _debug('Error during validating server handshake response header: $e');
+                        onerror('Error during validating server handshake response header: ${e}');
+                        setClosed();
+                    }
                 case State.ServerHandshake:
                     if (!readHttpHeader()) {
                         return;
@@ -220,6 +235,20 @@ class WebSocketGeneric extends WebSocket {
 
         //trace('data!' + socket.bytesAvailable);
         //trace(socket.readUTFBytes(socket.bytesAvailable));
+    }
+
+    private function validateServerHandshakeHeader():Void {
+        _debug('HTTP request: \n$httpHeader');
+
+        var requestLines = httpHeader.split('\r\n');
+        requestLines.pop();
+        requestLines.pop();
+
+        var firstLine = requestLines.shift();
+        var regexp = ~/^HTTP\/1.1 ([0-9]+) ?(.*)$/;
+        if (!regexp.match(firstLine)) throw 'First line of HTTP request is invalid: "$firstLine"';
+        var statusCode:String = regexp.matched(1);
+        if (statusCode != "101") throw 'Status code differed from 101 indicates that handshake has not succeeded. Actual status code: ${statusCode}.';
     }
     
     private function setClosed() {
@@ -380,7 +409,8 @@ class WebSocketGeneric extends WebSocket {
 
     private function prepareFrame(data:Bytes, type:Opcode, isFinal:Bool):Bytes {
         var out = new BytesRW();
-        var isMasked = true; // All clientes messages must be masked: http://tools.ietf.org/html/rfc6455#section-5.1
+        //var isMasked = true; // All clientes messages must be masked: http://tools.ietf.org/html/rfc6455#section-5.1
+        var isMasked = false; // Chrome doesn't like this?
         var mask = generateMask();
         var sizeMask = (isMasked ? 0x80 : 0x00);
 
