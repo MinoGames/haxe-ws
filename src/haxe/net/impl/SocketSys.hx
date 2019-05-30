@@ -88,7 +88,7 @@ class SocketSys extends Socket2 {
 			needClose = true;
 		}
 
-		if(result != null && !needClose) {
+		if(result != null && !needClose && result.read != null) {
 			if (result.read.length > 0) {
 				var out = new BytesRW();
 				try {
