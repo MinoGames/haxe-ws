@@ -1,0 +1,3 @@
+-neko output/out.n
+-cp tests
+-main Test
