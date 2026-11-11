@@ -10,7 +10,7 @@ class WebSocketGeneric extends WebSocket {
     private var socket:Socket2;
     private var origin = "http://127.0.0.1/";
     private var scheme = "ws";
-    private var key = "wskey";
+    private var key:String = null;
     private var host = "127.0.0.1";
     private var port = 80;
     public var path(default, null) = "/";
@@ -20,11 +20,11 @@ class WebSocketGeneric extends WebSocket {
     public var debug:Bool = true;
     private var needHandleData:Bool = false;
 
-    function initialize(uri:String, protocols:Array<String> = null, origin:String = null, key:String = "wskey", debug:Bool = true) {
+    function initialize(uri:String, protocols:Array<String> = null, origin:String = null, key:String = null, debug:Bool = true) {
         if (origin == null) origin = "http://127.0.0.1/";
         this.protocols = protocols;
         this.origin = origin;
-        this.key = key;
+        this.key = key != null ? Base64.encode(Utf8Encoder.encode(key)) : randomKey();
         this.debug = debug;
         var reg = ~/^(\w+?):\/\/([\w\.-]+)(:(\d+))?(\/.*)?$/;
         //var reg = ~/^(\w+?):/;
@@ -69,7 +69,15 @@ class WebSocketGeneric extends WebSocket {
         };
     }
     
-    public static function create(uri:String, protocols:Array<String> = null, origin:String = null, key:String = "wskey", debug:Bool) {
+    // RFC 6455 4.1: the key is 16 random bytes, base64-encoded, new for each connection.
+    // Servers such as ws 7.x answer 400 to any other key.
+    static function randomKey():String {
+        var bytes = Bytes.alloc(16);
+        for (i in 0...16) bytes.set(i, Std.random(256));
+        return Base64.encode(bytes);
+    }
+
+    public static function create(uri:String, protocols:Array<String> = null, origin:String = null, key:String = null, debug:Bool) {
         return new WebSocketGeneric().initialize(uri, protocols, origin, key, debug);
     }
     
@@ -351,7 +359,7 @@ class WebSocketGeneric extends WebSocket {
         }
         lines.push('Sec-WebSocket-Version: 13');
         lines.push('Connection: Upgrade');
-        lines.push("Sec-WebSocket-Key: " + Base64.encode(Utf8Encoder.encode(key)));
+        lines.push("Sec-WebSocket-Key: " + key);
         lines.push('Origin: ${origin}');
         lines.push('User-Agent: Mozilla/5.0');
 
