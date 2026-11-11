@@ -45,7 +45,7 @@ class WebSocketGeneric extends WebSocket {
         state = State.Handshake;
         socket.onconnect = function() {
             _debug('socket connected');
-            writeBytes(prepareClientHandshake(path, host, port, key, origin));
+            writeBytes(prepareClientHandshake(path, host, port, this.key, origin));
             //this.onopen();
         };
         commonInitialize();
