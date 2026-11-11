@@ -19,6 +19,8 @@ class WebSocketGeneric extends WebSocket {
     private var state:State = State.Handshake;
     public var debug:Bool = true;
     private var needHandleData:Bool = false;
+    // RFC 6455 5.1: a client masks every frame it sends; a server never does
+    private var isClient = false;
 
     function initialize(uri:String, protocols:Array<String> = null, origin:String = null, key:String = null, debug:Bool = true) {
         if (origin == null) origin = "http://127.0.0.1/";
@@ -26,6 +28,7 @@ class WebSocketGeneric extends WebSocket {
         this.origin = origin;
         this.key = key != null ? Base64.encode(Utf8Encoder.encode(key)) : randomKey();
         this.debug = debug;
+        this.isClient = true;
         var reg = ~/^(\w+?):\/\/([\w\.-]+)(:(\d+))?(\/.*)?$/;
         //var reg = ~/^(\w+?):/;
         if (!reg.match(uri)) throw 'Uri not matching websocket uri "${uri}"';
@@ -417,8 +420,7 @@ class WebSocketGeneric extends WebSocket {
 
     private function prepareFrame(data:Bytes, type:Opcode, isFinal:Bool):Bytes {
         var out = new BytesRW();
-        //var isMasked = true; // All clientes messages must be masked: http://tools.ietf.org/html/rfc6455#section-5.1
-        var isMasked = false; // Chrome doesn't like this?
+        var isMasked = isClient;
         var mask = generateMask();
         var sizeMask = (isMasked ? 0x80 : 0x00);
 
